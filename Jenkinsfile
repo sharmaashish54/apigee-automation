@@ -1,7 +1,6 @@
 pipeline {
   agent any	
- 
-  tools {NodeJS "node"}
+
  stages {
    stage('generate proxy bundle'){
     steps {
