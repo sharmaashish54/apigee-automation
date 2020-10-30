@@ -2,9 +2,6 @@ pipeline {
   agent any	
  
   tools {nodejs "node"}
-	environment {
-		USER_CREDENTIALS = credentials('nexus-raw-repo')
-	}
  stages {
    stage('generate proxy bundle'){
     steps {
