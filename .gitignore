@@ -1,0 +1,12 @@
+Servers/
+settings.xml
+.metadata/
+.project
+bin/
+*.iml
+/target
+.idea/
+**/*/.DS_Store
+.classpath
+.settings/
+*-local.properties
