@@ -14,15 +14,9 @@ pipeline {
 	else
 		echo "$file not found."
 	fi
-file="./api-proxy-config.properties"
-	if [ -f "$file" ]
-	then
-	name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
-	authenticated=`sed \'/^\\#/d\' $file | grep \'authenticated\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
-	else
-		echo "$file not found."
-	fi
-	openapi2apigee generateApi petStore -s ./open-api-spec/${name}.json -d /home/jenkins/agent/workspace/test/
+	ls -al
+	echo $name
+	openapi2apigee generateApi ${name} -s ./open-api-spec/${name}.json -d /home/jenkins/agent/workspace/test/
 	cd /home/jenkins/agent/workspace/test/petStorecd /home/jenkins/agent/workspace/test/${name}/apiproxy/policies
 	touch AM-jwt-failed.xml
 	echo \'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
