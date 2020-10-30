@@ -4,7 +4,6 @@ pipeline {
  stages {
    stage('generate proxy bundle'){
     steps {
-		sh 'npm install -g openapi2apigee'
 	sh label: '', script: '''
 	file="./api-proxy-config.properties"
 	if [ -f "$file" ]
