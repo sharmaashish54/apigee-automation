@@ -5,7 +5,7 @@ pipeline {
    stage('generate proxy bundle'){
     steps {
 	echo "ashish143"
-	sh label: '', script: '''
+	#!/bin/bash
 	echo "ashish123"
 	file="./api-proxy-config.properties"
 	echo "ashish"
@@ -261,7 +261,6 @@ pipeline {
 		cd /home/jenkins/agent/workspace/test/${name}/apiproxy/targets
 		sed -i -r -e 's|<Request.*>||1' -i -r -e 's|<Response.*>||1' -i -e 's;<PreFlow name="PreFlow">;<PreFlow name="PreFlow"><Request><Step><FaultRules/><Name>AM-set-target-url</Name></Step><Step><Name>basicauth-ms</Name></Step><Step><Name>JS-set-target-url</Name></Step></Request><Response><Step><Name>AM-AddCORS</Name></Step></Response>;' default.xml
 	fi;
-	'''
   }
  }
 
@@ -269,7 +268,7 @@ pipeline {
     stage('deploy apigee proxy bundles'){
      steps {
 	   withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
-		sh label: '', script: '''
+		#!/bin/bash
 		file="./api-proxy-config.properties"
 		if [ -f "$file" ]
 		then
@@ -306,7 +305,6 @@ pipeline {
         else
          exit 1
 		fi
-		'''
 	  	}
 	  }
 	 }
