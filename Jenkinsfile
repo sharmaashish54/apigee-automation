@@ -5,7 +5,9 @@ pipeline {
    stage('generate proxy bundle'){
     steps {
 	sh label: '', script: '''
+	echo "ashish123"
 	file="./api-proxy-config.properties"
+	echo "ashish"
 	if [ -f "$file" ]
 	then
 	name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
