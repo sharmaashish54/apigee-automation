@@ -274,7 +274,14 @@ file="./api-proxy-config.properties"
      steps {
 	   withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
 		sh label: '', script: '''
-		set +x
+		file="./api-proxy-config.properties"
+		if [ -f "$file" ]
+		then
+		name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+		authenticated=`sed \'/^\\#/d\' $file | grep \'authenticated\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+		else
+			echo "$file not found."
+		fi
 		cd ${name}
 		HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST  -u $username:$password  -F "file=@${name}.zip" "https://api.enterprise.apigee.com/v1/organizations/asharma383-eval/apis?action=import&name=${name}")
 		# extract the body
