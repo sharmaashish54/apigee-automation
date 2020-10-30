@@ -4,6 +4,7 @@ pipeline {
  stages {
    stage('generate proxy bundle'){
     steps {
+	echo "ashish143"
 	sh label: '', script: '''
 	echo "ashish123"
 	file="./api-proxy-config.properties"
