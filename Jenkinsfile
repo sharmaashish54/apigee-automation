@@ -1,14 +1,16 @@
 pipeline {
   agent any	
-
+ 
+  tools {nodejs "node"}
+	environment {
+		USER_CREDENTIALS = credentials('nexus-raw-repo')
+	}
  stages {
    stage('generate proxy bundle'){
     steps {
-	echo "ashish143"
-	#!/bin/bash
-	echo "ashish123"
+		sh 'npm install -g openapi2apigee'
+	sh label: '', script: '''
 	file="./api-proxy-config.properties"
-	echo "ashish"
 	if [ -f "$file" ]
 	then
 	name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
@@ -16,10 +18,8 @@ pipeline {
 	else
 		echo "$file not found."
 	fi
-	ls -al
-	echo $name
 	openapi2apigee generateApi ${name} -s ./open-api-spec/${name}.json -d /home/jenkins/agent/workspace/test/
-	cd /home/jenkins/agent/workspace/test/petStorecd /home/jenkins/agent/workspace/test/${name}/apiproxy/policies
+	cd /home/jenkins/agent/workspace/test/${name}/apiproxy/policies
 	touch AM-jwt-failed.xml
 	echo \'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 			<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-jwt-failed">
@@ -261,52 +261,68 @@ pipeline {
 		cd /home/jenkins/agent/workspace/test/${name}/apiproxy/targets
 		sed -i -r -e 's|<Request.*>||1' -i -r -e 's|<Response.*>||1' -i -e 's;<PreFlow name="PreFlow">;<PreFlow name="PreFlow"><Request><Step><FaultRules/><Name>AM-set-target-url</Name></Step><Step><Name>basicauth-ms</Name></Step><Step><Name>JS-set-target-url</Name></Step></Request><Response><Step><Name>AM-AddCORS</Name></Step></Response>;' default.xml
 	fi;
-  }
- }
-
-
-    stage('deploy apigee proxy bundles'){
-     steps {
-	   withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
-		#!/bin/bash
+	'''
+         
+      }
+   }
+   stage('zip Proxy bundle') {
+    steps{ 
+	withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
+        sh 'npm install -g bestzip'
+		sh 'npm install -g apigeetool'
+		sh label: '', script: '''
 		file="./api-proxy-config.properties"
 		if [ -f "$file" ]
 		then
-		name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
-		authenticated=`sed \'/^\\#/d\' $file | grep \'authenticated\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+			name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+			targetURL=`sed \'/^\\#/d\' $file | grep \'targetURL\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
 		else
 			echo "$file not found."
 		fi
-		cd ${name}
-		HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST  -u $username:$password  -F "file=@${name}.zip" "https://api.enterprise.apigee.com/v1/organizations/asharma383-eval/apis?action=import&name=${name}")
-		# extract the body
-		HTTP_BODY=$(echo $HTTP_RESPONSE | sed -e 's/HTTPSTATUS:.*//g')
-		# extract the status
-		HTTP_STATUS=$(echo $HTTP_RESPONSE | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-		echo "$HTTP_STATUS"
-		# print the body
-		echo "$HTTP_BODY" > temp.json
-		REVISION=$( grep -o '"revision" : *"[^"]*"' temp.json | grep -o '"[^"]*"$' | sed 's/"//g')
-		# example using the status
-		if [ $HTTP_STATUS -eq 201  ]
-        	then
-        echo "Proxy is uploaded successfully [HTTP status: $HTTP_STATUS]"
-        echo "$REVISION"
-        else
-         exit 1
+        cd /home/jenkins/agent/workspace/test/${name}
+		apigeetool deployproxy -u $username -o gpssa-non-prod -e dev -L http://10.10.240.5:8080 -n ${name} -p $password -d .
+		bestzip apiproxy.zip apiproxy
+		'''
+	}
+    }
+   }
+   stage('create entry in kvm'){
+   steps{
+   withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
+		sh label: '', script: '''
+		file="api-proxy-config.properties"
+		if [ -f "$file" ]
+		then
+			name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+			targetURL=`sed \'/^\\#/d\' $file | grep \'targetURL\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+		else
+			echo "$file not found."
 		fi
-		DEPLOY_HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST --header "Content-Type: application/x-www-form-urlencoded" -u $username:$password "https://api.enterprise.apigee.com/v1/organizations/asharma383-eval/environments/prod/apis/${name}/revisions/$REVISION/deployments?override=true")
-
-		# extract the status
-		DEPLOY_HTTP_STATUS=$(echo $DEPLOY_HTTP_RESPONSE | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-		if [ $DEPLOY_HTTP_STATUS -eq 200  ]
-        then
-        echo "Proxy is deployed successfully [HTTP status: $HTTP_STATUS]"
-        else
-         exit 1
+		curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST --header 'Content-Type: application/json' -d '{"name" :"ms-ck-config","entry":[{"name":  "'$name'-service-url","value" : "'$targetURL'"}]}' -u $username:$password 'http://10.10.240.5:8080/v1/organizations/gpssa-non-prod/environments/dev/keyvaluemaps/ms-ck-config'
+		
+		'''
+		}
+	 }
+   }
+    /*stage('upload Proxy bundle') {
+    steps {
+    sh label: '', script: '''
+	set +x
+    file="./api-proxy-config.properties"
+		if [ -f "$file" ]
+		then
+			name=`sed \'/^\\#/d\' $file | grep \'name\'  | tail -n 1 | cut -d "=" -f2- | sed \'s/^[[:space:]]*//;s/[[:space:]]*$//\'`
+		else
+			echo "$file not found."
 		fi
-	  	}
+    	cd /home/jenkins/agent/workspace/test/${name}
+		myvar=`ls | grep .zip`;
+		for i in $myvar
+		do
+			curl -k -v -u  $USER_CREDENTIALS_USR:$USER_CREDENTIALS_PSW --upload-file $i https://10.10.242.7/nexus/repository/apigee-artifacts-repo/$name/$name
+		done
+		'''
 	  }
-	 }
-	 }
-	 }
+	 }*/
+	}
+}
