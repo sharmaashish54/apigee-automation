@@ -264,7 +264,7 @@ pipeline {
 		
             }
         }
- stage('deploy apigee proxy bundles'){
+	stage('deploy apigee proxy bundles'){
      steps {
 	   withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
 	   sh label: '', script: '''
@@ -276,7 +276,7 @@ pipeline {
 		else
 			echo "$file not found."
 		fi
-		cd ${name}
+		cd /home/jenkins/agent/workspace/test/${name}
 		HTTP_RESPONSE=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST  -u $username:$password  -F "file=@${name}.zip" "https://api.enterprise.apigee.com/v1/organizations/asharma383-eval/apis?action=import&name=${name}")
 		# extract the body
 		HTTP_BODY=$(echo $HTTP_RESPONSE | sed -e 's/HTTPSTATUS:.*//g')
@@ -310,5 +310,6 @@ pipeline {
 	 }
     }
 }
+
 
 
