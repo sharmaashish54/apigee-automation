@@ -296,7 +296,7 @@ pipeline {
 		else
 			echo "$file not found."
 		fi
-		curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST --header 'Content-Type: application/json' -d '{"name" :"ms-ck-config","entry":[{"name":  "'$name'-service-url","value" : "'$targetURL'"}]}' -u $username:$password 'https://api.enterprise.apigee.com/v1/organizations/asharma383-eval/environments/test/keyvaluemaps/ms-ck-config'
+		curl --silent --write-out "HTTPSTATUS:%{http_code}" -X POST --header 'Content-Type: application/json' -d '{"name" :"ms-ck-config","entry":[{"name":  "'$name'-service-url","value" : "'$targetURL'"}]}' -u $username:$password 'https://api.enterprise.apigee.com/v1/organizations/asharma383-eval/environments/test/keyvaluemaps'
 		
 		'''
 		}
