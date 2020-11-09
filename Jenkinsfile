@@ -264,6 +264,16 @@ pipeline {
 		
             }
         }
+		stage('Open API Spec Validated') {
+    steps{ 
+	withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
+		sh label: '', script: '''
+
+		'''
+	
+	}
+    }
+   }
 	stage('zip Proxy bundle and deploy') {
     steps{ 
 	withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
