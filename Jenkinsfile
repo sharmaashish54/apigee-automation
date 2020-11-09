@@ -221,33 +221,33 @@ pipeline {
     url = url + "?"+queryParams;
 	}
 	context.setVariable("target.url",  url);
-    var impersonated_gpssaId = context.getVariable("impersonated_gpssaId");	
+    var impersonated_cookieId = context.getVariable("impersonated_cookieId");	
 
-	if(impersonated_gpssaId!==null){
-    context.setVariable("request.header.gpssaId",impersonated_gpssaId);
+	if(impersonated_cookieId!==null){
+    context.setVariable("request.header.cookieId",impersonated_cookieId);
 	}else{
-	context.setVariable("request.header.gpssaId",context.getVariable("jwt.verify-jwt-ck-token.decoded.claim.gpssa_id"));	
+	context.setVariable("request.header.cookieId",context.getVariable("jwt.verify-jwt-ck-token.decoded.claim.cookie_id"));	
 	}\' > JS-set-target-url.js
 	
 	touch generate-auth-using-cookie.js
 	echo \'var cookie = context.getVariable("request.header.Cookie");
 	if(cookie){
 	var tokenValue = cookie && cookie.split(";").find(function(row){
-    return row.trim().startsWith("gpssa_auth_token");
+    return row.trim().startsWith("cookie_auth_token");
 	}).split("=")[1];
 	if(tokenValue){
 	tokenValue = "Bearer " + tokenValue;
 	context.setVariable("request.header.Authorization",tokenValue); 
 	}	
 	var impersonated_cookie_str = cookie && cookie.split(";").find(function(row){
-    return row.trim().startsWith("gpssa_auth_impersonated");
+    return row.trim().startsWith("cookie_auth_impersonated");
 	});
 
 	if (impersonated_cookie_str)
     {
      var impersonated_cookie = impersonated_cookie_str.split("=")[1];
-     var impersonated_gpssaId = Base64.decode(impersonated_cookie);
-     context.setVariable("impersonated_gpssaId",impersonated_gpssaId);
+     var impersonated_cookieId = Base64.decode(impersonated_cookie);
+     context.setVariable("impersonated_cookieId",impersonated_cookieId);
     }
 	}\' > generate-auth-using-cookie.js
 
