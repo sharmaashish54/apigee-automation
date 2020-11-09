@@ -264,7 +264,7 @@ pipeline {
 		
             }
         }
-	stage('zip Proxy bundle') {
+	stage('zip Proxy bundle and deploy') {
     steps{ 
 	withCredentials([usernamePassword(credentialsId: 'APIGEE-Credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
 		sh label: '', script: '''
